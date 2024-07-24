@@ -35,9 +35,6 @@
 """
 
 
-
-
-
 import os
 import json
 import getpass
@@ -72,24 +69,35 @@ libro_DB = [{"id":"32456", "titulo":"Señor de Anillo", "autor":"Tolkien","año 
             {"id": "13", "titulo": "El Laberinto de la Soledad", "año de edicion": "2005", "autor": "Gabriel Garcia Marquez","Estado":""},
             ]
 
+archivo_usuario_DB = "usuario_DB.json"
+archivo_libro_DB = "libro_DB.json"
+
+lista_archivos_DB = [archivo_usuario_DB, archivo_libro_DB]
+lista_DB = [usuario_DB, libro_DB]
 
 # funciones de Menu y operaciones
 
-def guardar_usuario_DB():
-    with open("usuario_DB.json", "w") as file:
-        json.dump(usuario_DB, file)
 
-def guardar_libro_DB():
-    with open("libro_DB.json", "w") as file:
-        json.dump(libro_DB, file)
+def guardar_DB(archivo,datos_DB):
+    with open (archivo, "w") as file:
+        json.dump(datos_DB, file)
 
-def cargar_usuario_DB():
-    with open("usuario_DB.json", "r") as file:
-        return json.load(file)
 
-def cargar_libro_DB():
-    with open("libro_DB.json", "r") as file:
-        return json.load(file)
+def cargar_DB(lista_archivos_DB, lista_DB):
+    for i in range(len(lista_archivos_DB)):
+        try:
+            with open (lista_archivos_DB[i], "r") as file:
+                lista_DB[i] = json.load(file)
+        except FileNotFoundError:
+            guardar_DB(lista_archivos_DB[i],lista_DB[i])
+        except json.decoder.JSONDecodeError:
+            #  agregando el dia de hoy a archivo existente
+            current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            file_name, file_extension = os.path.splitext(lista_archivos_DB[i])
+            new_name = f"{file_name}_{current_time}{file_extension}"
+            os.rename(lista_archivos_DB[i], new_name)
+            guardar_DB(lista_archivos_DB[i],lista_DB[i])
+    return lista_DB
 
 def continuar ():
     input("Presione ENTER para continuar...")
@@ -102,30 +110,20 @@ def proceso_100 ():
     print("\033[1;36;40m" + tarea.center(110)  + "\033[0m")
     print ()
     for i in range(n+1):
-        
-        print(f'\r[{ico*i}{" "*(n-i)}] {i*100/n}%',end='')   # 輸出不換行的內容
+        print(f'\r[{ico*i}{" "*(n-i)}] {i*100/n}%',end='')
         time.sleep(0.01 * tiempo)
 
 
 def cabezera ():
     fecha = datetime.datetime.now().date()
     hora = datetime.datetime.now().time()
-
-    #print (" ".rjust(70), end = "")
-    #print ("\033[1;9;107m"+ "Fecha y Hora :" + "\033[0m" f" {fecha.strftime('%d/%m/%y')} {hora.strftime('%H:%M:%S')} ")
-    # print ("\033[1;31;100m" + "Hora".center(70) + "\033[0m")
-    """ print (" ".rjust(70), end = "")
-    print (f"Fecha : {fecha.strftime('%d/%m/%y')}")
-    print (" ".rjust(70), end = "")
-    print (f"Hora : {hora.strftime('%H:%M:%S')}") """
     print (" ".rjust(145, "-"))
-    print("     Sistema de Administración de " "\033[1;36;40m" + "Biblioteca Públic.ar📚" + "\033[0m" + " ".rjust(68), end = "")
+    print("     Sistema de Administración de " "\033[1;36;40m" + "Biblioteca Públic.ar📚 " + "\033[0m" + " ".rjust(68), end = "")
     print (f"Fecha : {fecha.strftime('%d/%m/%y')}")
     print("     Te damos la bienvenida 🤝 a ""\033[1;33;40m" + "Proyecto Grupo Dragon🐉" + "\033[0m" +" ".rjust(70), end = "")
     print (f"Hora : {hora.strftime('%H:%M:%S')}")
-    #c = "\033[1;9;107m" + "-" + "\033[0m"
     print (" ".rjust(145, "-"))
-    
+
 
 def espacio():
     print (" "*12, end = "")
@@ -134,7 +132,23 @@ def marco_menu():
     print ("-"*50)
 
 
-def longin ():
+def cabezera_menu (zona, usuario):
+    espacio()
+    marco_menu()
+    espacio()
+    if usuario["nivel"] == 2:
+        print ("Bienvenido Administrador: " + "\033[4;91;40m" + usuario["nombre"] + "\033[0m")
+    elif usuario["nivel"] == 1:
+        print("Bienvenido Usuario: " + "\033[4;94;40m" + usuario["nombre"] + "\033[0m")
+    elif usuario["nivel"] == 0:
+        print("Bienvenido Invitado: " + "\033[4;92;40m" + usuario["nombre"] + "\033[0m")
+    espacio()
+    marco_menu()
+    espacio()
+    print ("Estas en Menu de  " + "\033[4;32;40m" + zona + "\033[0m")
+
+
+def longin (usuario_DB):
     os.system('cls')
     cabezera()
     espacio()
@@ -145,16 +159,14 @@ def longin ():
     marco_menu()
     espacio()
     id=input("Ingrese su id: ")
-    #clave = input("Ingrese su clave: ")
-
     clave = getpass.getpass("            Ingrese su clave: ")
     
     for indice in range(len(usuario_DB)):
-        if usuario_DB[indice]["id"] == id and usuario_DB[indice]["clave"] == clave:return indice
+        if usuario_DB[indice]["id"] == id and usuario_DB[indice]["clave"] == clave:return usuario_DB[indice]
     return "No_Existe"
 
 
-def registrar_usuario():
+def registrar_usuario(usuario_DB):
     os.system('cls')
     cabezera()
     espacio()
@@ -244,9 +256,7 @@ def registrar_usuario():
         
     # nivel de poder iniciar 0, usuario nuevo
     nivel = 0
-    
 
-    
     # actualizar direcionario de usuario
     usuario.update({"id":id,"clave":clave,"nombre":nombre,"DNI":DNI,"nivel":nivel})
     
@@ -254,22 +264,25 @@ def registrar_usuario():
     usuario_DB.append(usuario)
     
     # guardar usuario en base de datos
-    guardar_usuario_DB()
+    guardar_DB(archivo_usuario_DB, usuario_DB)
     return True
 
 
-def listar_usuario():
+def listar_usuario(usuario_DB):
     conta = 0
-    divisor = (len(usuario_DB)//10)
+    if (len(usuario_DB)//10)<(len(usuario_DB)/10):
+        total = (len(usuario_DB)//10)+1
+    else:
+        total = (len(usuario_DB)//10)
     i = 0
-    while conta <= divisor:
+    while conta < total:
         os.system('cls')
         cabezera()
         espacio()
         print ("*"*85)
         espacio()
         conta +=1
-        print("                               " + "\033[1;32;40m" + f"Lista de Usuarios ({conta}/{divisor+1})" + "\033[0m")
+        print("                               " + "\033[1;32;40m" + f"Lista de Usuarios ({conta}/{total})" + "\033[0m")
         espacio()
         print ("*"*85)
         espacio()
@@ -279,12 +292,12 @@ def listar_usuario():
         espacio()
         print(f"{' '*1}+-------+----------------------+---------------------+----------------------+-----+")
         
-        while i != (len(usuario_DB)):
+        while i < (len(usuario_DB)):
             espacio()
             print(f"{' '*1}| {str(i+1).center(3)}.  | {usuario_DB[i]['id'].center(20)} | {usuario_DB[i]['nombre'].center(20)}| {usuario_DB[i]['DNI'].center(20)} |  {usuario_DB[i]['nivel']}  |")
             i += 1
             #Mostrar por 10 linea
-            if (i+1)%11 == 0: 
+            if (i+1)%10 == 1: 
                 break
         espacio()
         print(f"{' '*1}+-------+----------------------+---------------------+----------------------+-----+")
@@ -293,7 +306,7 @@ def listar_usuario():
         continuar()
 
 
-def buscar_user(dato_user):
+def buscar_user(usuario_DB, dato_user):
     for indice in range(len(usuario_DB)):
         if usuario_DB[indice]["id"] == dato_user or usuario_DB[indice]["DNI"] == dato_user or usuario_DB[indice]["nombre"] == dato_user:
             return indice
@@ -302,16 +315,11 @@ def buscar_user(dato_user):
                 return "No_Existe"
 
 
-def modificar_usuario(indice) :   
+def modificar_usuario(usuario_DB, usuario): 
     while True:
         os.system('cls')
         cabezera()
-        espacio()
-        marco_menu()
-        espacio()
-        print("Bienvenido Administrador: " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-        espacio()
-        print("Estas en Zona de  " + "\033[4;32;40m" + "Modificar Rol de Usuario" + "\033[0m")
+        cabezera_menu("Modificar Rol de Usuario", usuario)
         espacio()
         marco_menu()
         espacio()
@@ -319,7 +327,7 @@ def modificar_usuario(indice) :
         espacio()
         dato_user =input("Si desea salir presione '0': ")
         if dato_user == "0": break
-        i = buscar_user(dato_user) # i = indice
+        i = buscar_user(usuario_DB, dato_user) # i = indice
         if i != "No_Existe":
             espacio()
             marco_menu()
@@ -329,7 +337,7 @@ def modificar_usuario(indice) :
             espacio()
             control = input("Desea cambiar su Rol (" + "\033[1;32;40m" + "S" + "\033[0m" + "/" + "\033[1;31;40m" + "N" + "\033[0m" + "): ")
             if control.upper() == "S":
-                if i == indice:
+                if usuario_DB[i] == usuario:
                     print ()
                     espacio()
                     input("No se puede modificar el usuario actual")
@@ -359,26 +367,27 @@ def modificar_usuario(indice) :
                 elif rol == "0":
                     break
                 else:
+                    print()
                     espacio()
                     input ("Rol no valido")
                     continue
-                guardar_usuario_DB()
+                guardar_DB(archivo_usuario_DB, usuario_DB)
+            else:
+                print()
+                espacio()
+                input ("No se modifico rol de usuario")
+                continue
         else:
             print()
             espacio()
             input("Usuario no encontrado, por favor verifique su dato ingresado")
 
 
-def eliminar_usuario(indice):
+def eliminar_usuario(usuario_DB, usuario):
     while True:
         os.system('cls')
         cabezera()
-        espacio()
-        marco_menu()
-        espacio()
-        print("Bienvenido Administrador: " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-        espacio()
-        print("Estas en Zona de  " + "\033[4;32;40m" + "Eliminar el Usuario" + "\033[0m")
+        cabezera_menu("Eliminar el Usuario", usuario)
         espacio()
         marco_menu()
         espacio()
@@ -386,7 +395,7 @@ def eliminar_usuario(indice):
         espacio()
         dato_user =input("Si desea salir presione '0': ") 
         if dato_user == "0": break
-        i = buscar_user(dato_user) # i = indice
+        i = buscar_user(usuario_DB, dato_user) # i = indice
         if i != "No_Existe":
             espacio()
             marco_menu()
@@ -396,7 +405,7 @@ def eliminar_usuario(indice):
             espacio()
             control = input("Desea ELIMINAR este usuario (" + "\033[1;32;40m" + "S" + "\033[0m" + "/" + "\033[1;31;40m" + "N" + "\033[0m" + "): ")
             if control.upper() == "S":
-                if i == indice:
+                if usuario_DB[i] == usuario:
                     print ()
                     espacio()
                     input("No se puede eliminar el usuario actual")
@@ -404,15 +413,20 @@ def eliminar_usuario(indice):
                 control = 0
                 for j in range(len(libro_DB)):
                     if libro_DB[j]["Estado"] == usuario_DB[i]["id"]:
+                        espacio()
                         input(f"{usuario_DB[i]['nombre']} no puede ser eliminado porque tiene libros prestados")
                         control = 1
+                        break
                 if control == 1: break
                 temp =usuario_DB.pop(i)
                 espacio()
                 input("\033[1;33;40m" + f"{temp['nombre']}" + "\033[0m" + " ha sido  " + "\033[1;31;40m" + "eliminado" + "\033[0m")
-                guardar_usuario_DB()
+                guardar_DB(archivo_usuario_DB, usuario_DB)
                 break
             else:
+                print()
+                espacio()
+                input ("No eliminado ningun usuario")
                 break
         else:
             print ()
@@ -420,18 +434,11 @@ def eliminar_usuario(indice):
             input("Usuario no encontrado, por favor verifique el dato ingresado")
 
 
-def menu_admin_usuario(indice):
+def menu_admin_usuario(usuario):
     while True:
             os.system('cls')
             cabezera()
-            espacio()
-            marco_menu()
-            espacio()
-            print ("Bienvenido Administrador: " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-            espacio()
-            marco_menu()
-            espacio()
-            print ("Estas en Menu de  " + "\033[4;32;40m" + "administracion de usuario" + "\033[0m")
+            cabezera_menu("administracion de usuario", usuario)
             espacio()
             print ("1. 🎁 Crear un usuario")
             espacio()
@@ -446,11 +453,10 @@ def menu_admin_usuario(indice):
             marco_menu()
             espacio()
             menu_opcion = input ("Elegir un opcion: ")
-                                
 
             # 1. Crear un Usuario
             if menu_opcion == "1":
-                exito = registrar_usuario()
+                exito = registrar_usuario(usuario_DB)
                 if exito: 
                     espacio()
                     input("Usuario registrado con exito")
@@ -461,17 +467,17 @@ def menu_admin_usuario(indice):
                             
             # 2. listar todos los usuarios
             elif menu_opcion == "2":
-                listar_usuario()
+                listar_usuario(usuario_DB)
                 continue
                             
             # 3. modificar Dato de Usuario
             elif menu_opcion == "3":
-                modificar_usuario(indice)
+                modificar_usuario(usuario_DB, usuario)
                 continue
                             
             # 4. Eliminar Usuario
             elif menu_opcion == "4":
-                eliminar_usuario(indice)
+                eliminar_usuario(usuario_DB, usuario)
                             
             # 0. Salir
             elif menu_opcion == "0":break
@@ -482,7 +488,7 @@ def menu_admin_usuario(indice):
                 input("Ingrese un valor correcto por favor\n")
 
 
-def registrar_libro():
+def registrar_libro(libro_DB):
     os.system('cls')
     cabezera()
     espacio()
@@ -525,10 +531,7 @@ def registrar_libro():
             libro["id"] = codigo
             id_existe = False
         else:continue
-        
-        
-            
-    
+
     # ingrese titulo de libro
     while True:
         espacio()
@@ -543,7 +546,6 @@ def registrar_libro():
         if len(libro["autor"]) > 0:
             break
     
-    
     # ingrese año de edicion de libro
     while True:
         espacio()
@@ -555,7 +557,7 @@ def registrar_libro():
     libro_DB.append(libro)
     
     # guardar usuario en base de datos
-    guardar_libro_DB()
+    guardar_DB(archivo_libro_DB, libro_DB)
     return True
 
 
@@ -564,18 +566,23 @@ def marco_libro():
     #                  Nª       id    titulo   autor   Año de Edicion  Reservado
     print(f"{' '*1}+{'-'*7}+{'-'*10}+{'-'*46}+{'-'*27}+{'-'*17}+{'-'*12}+")
 
-def listar_libro():
+def listar_libro(libro_DB):
+    # Paginador
     conta = 0
-    divisor = (len(libro_DB)//10)
+    if (len(libro_DB)//10)<(len(libro_DB)/10):
+        total = (len(libro_DB)//10)+1
+    else:
+        total = (len(libro_DB)//10)
+    
     i = 0
-    while conta != divisor+1:
+    while conta < total:
         os.system('cls')
         cabezera()
         espacio()
         print ("*"*130)
         espacio()
         conta += 1
-        print(f"{' '*50} " + "\033[1;32;40m" + f"Lista de Libros ({conta}/{divisor+1})" + "\033[0m")
+        print(f"{' '*50} " + "\033[1;32;40m" + f"Lista de Libros ({conta}/{total})" + "\033[0m")
         espacio()
         print ("*"*130)
         espacio()
@@ -584,28 +591,22 @@ def listar_libro():
         print(f"{' '*1}|  {'Nª'.center(3)}  | {'Codigo'.center(8)} | {'titulo'.center(45)}| {'autor'.center(25)} | {'Año de Edicion'.center(15)} | {'Reservado'.center(10)} |")
         espacio()
         marco_libro()
-        while i != (len(libro_DB)):
+        while i < (len(libro_DB)):
             espacio()
             print(f"{' '*1}| {str(i+1).center(3)}.  | {libro_DB[i]['id'].center(8)} | {libro_DB[i]['titulo'].center(45)}| {libro_DB[i]['autor'].center(25)} |  {libro_DB[i]['año de edicion'].center(13)}  |  {libro_DB[i]['Estado'].center(8)}  |")
             i += 1
             #Mostrar por 10 linea
-            if (i+1)%11 == 0: 
+            if (i+1)%10 == 1: 
                 break
         espacio()
         marco_libro()
-        espacio()
-        continuar()
+        if conta < total:
+            
+            espacio()
+            continuar()
 
 
-def buscar_user(dato_user):
-    for indice in range(len(usuario_DB)):
-        if usuario_DB[indice]["id"] == dato_user or usuario_DB[indice]["DNI"] == dato_user or usuario_DB[indice]["nombre"] == dato_user:
-            return indice
-        else:
-            if indice == (len(usuario_DB)-1):
-                return "No_Existe"
-
-def buscar_libro(dato_libro):
+def buscar_libro(libro_DB, dato_libro):
     for indice in range(len(libro_DB)):
         if dato_libro in libro_DB[indice]["id"].lower() or dato_libro in libro_DB[indice]["titulo"].lower() or dato_libro in libro_DB[indice]["autor"].lower() or dato_libro in libro_DB[indice]["año de edicion"].lower():
             return indice
@@ -614,35 +615,24 @@ def buscar_libro(dato_libro):
                 return "No_Existe"
 
 
-def reservar_libro(indice):
+def reservar_libro(libro_DB, usuario):
     while True:
         os.system('cls')
         cabezera()
-        espacio()
-        marco_menu()
-        if usuario_DB[indice]["nivel"] == 2:
-            espacio()
-            print("Bienvenido Administrador: " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-        else:
-            espacio()
-            print("Bienvenido Usuario: " + "\033[4;94;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-        espacio()
-        print("-"*35)
-        espacio()
-        print("Estas en Zona de  " + "\033[3;32;40m" + "Reserva de libro" + "\033[0m")
+        cabezera_menu("Reserva de libro", usuario)
         espacio()
         print ("Si desea listar los libros disponibles presione ENTER")
         espacio()
         print ("Si desea buscar un libro ingresar dato de libro a buscar")
         espacio()
-        dato_libro =input("Si desea salir presione '0': ") 
+        dato_libro = (input("Si desea salir presione '0': ") ).lower()
         if dato_libro == "0": break
+        # lista de libros buscado
         libro_reservado = []
+        # busqueda de libro
         for ilr in range(len(libro_DB)):
             if (dato_libro in libro_DB[ilr]["id"].lower() or dato_libro in libro_DB[ilr]["titulo"].lower() or dato_libro in libro_DB[ilr]["autor"].lower() or dato_libro in libro_DB[ilr]["año de edicion"].lower()) and (libro_DB[ilr]["Estado"] == ""):
-                libro_reservado.append(ilr)
-            if indice == "No_Existe" :
-                break
+                libro_reservado.append(libro_DB[ilr])
         
         if len(libro_reservado) == 0:
             espacio()
@@ -654,16 +644,7 @@ def reservar_libro(indice):
             continue
         
         if len(libro_reservado) > 1:
-            espacio()
-            print ("-"*130)
-            espacio()
-            print ("\033[1;32;40m" + "Libro Disponible".center(110) + "\033[0m")
-            espacio()
-            print ("-"*130)
-            for ilr in range(len(libro_reservado)):
-                espacio()
-                print (f"Codigo = {libro_DB[libro_reservado[ilr]]['id'].ljust(8)}  Titulo = {libro_DB[libro_reservado[ilr]]['titulo'].ljust(45)} Autor = {libro_DB[libro_reservado[ilr]]['autor'].ljust(25)}   Año de edicion = {libro_DB[libro_reservado[ilr]]['año de edicion']}" )
-                if (ilr+1)%25 == 0: continuar()
+            listar_libro(libro_reservado)
             print ()
             espacio()
             input ("Ingrese más palabras del libro para su búsqueda. ")
@@ -672,50 +653,43 @@ def reservar_libro(indice):
             continue
         
         if len(libro_reservado) == 1:
-            espacio()
-            print ("-"*130)
-            espacio()
-            print ("\033[1;32;40m" + "Libro Disponible".center(110) + "\033[0m")
-            espacio()
-            print ("-"*130)
-            espacio()
-            print (f"Codigo = {libro_DB[libro_reservado[0]]['id'].ljust(15)}  Titulo = {libro_DB[libro_reservado[0]]['titulo'].ljust(30)} Autor = {libro_DB[libro_reservado[0]]['autor'].ljust(20)}   Año de edicion = {libro_DB[libro_reservado[0]]['año de edicion']}" )
+            listar_libro(libro_reservado)
             print ()
             espacio()
+            indice = buscar_libro(libro_DB, dato_libro)
+            if usuario["nivel"] == 0:
+                    print("Hola " + "\033[1;32;40m" + usuario["nombre"] + "\033[0m" + ", Bienvenido Biblioteca Public.ar, Ud es Usuario Nuevo.")
+                    espacio()
+                    input("Avisar a Administrador que te asigne un rol para gestion de reserva del libro")
+                    continue
+                
             control = input("Desea reservar este libro (" + "\033[1;32;40m" + "S" + "\033[0m" + "/" + "\033[1;31;40m" + "N" + "\033[0m" + "): ")
             if control.upper() == "S":
-                libro_DB[libro_reservado[0]]["Estado"] = usuario_DB[indice]["id"]
-                guardar_libro_DB()
-                if usuario_DB[indice]["nivel"] == 2:
+                
+                libro_DB[indice]["Estado"] = usuario["id"]
+                guardar_DB(archivo_libro_DB, libro_DB)
+                if usuario["nivel"] == 2:
                     espacio()
-                    input (f"El libro " + "\033[1;95;40m" + f"{libro_DB[libro_reservado[0]]['titulo']}" + "\033[0m" + " ha sido reservado Por " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
+                    input ("El libro " + "\033[1;95;40m" + libro_DB[indice]['titulo'] + "\033[0m" + " ha sido reservado Por " + "\033[4;91;40m" + usuario["nombre"] + "\033[0m")
                 else:
                     print ()
                     espacio()
-                    input (f"El libro " + "\033[1;95;40m" + f"{libro_DB[libro_reservado[0]]['titulo']}" + "\033[0m" + " ha sido reservado Por " + "\033[4;94;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
+                    input ("El libro " + "\033[1;95;40m" + libro_DB[indice]['titulo'] + "\033[0m" + " ha sido reservado Por " + "\033[4;94;40m" + usuario["nombre"] + "\033[0m")
                 continue
             else:
                 espacio()
                 marco_menu()
                 print ()
                 espacio()
-                input (f"El libro " + "\033[1;95;40m" + f"{libro_DB[libro_reservado[0]]['titulo']} " + "\033[0m" + "\033[1;31;40m" + "no" + "\033[0m" + " esta Reservado. ")
+                input (f"El libro " + "\033[1;95;40m" + libro_DB[indice]['titulo'] + "\033[0m" + "\033[1;31;40m" + " no" + "\033[0m" + " lo reservo. ")
                 continue
 
 
-
-
-def devolucion_libro(indice) :   
-    
+def devolucion_libro(usuario_DB, libro_DB, usuario) :   
     while True:
         os.system('cls')
         cabezera()
-        espacio()
-        marco_menu()
-        espacio()
-        print("Bienvenido Administrador: " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-        espacio()
-        print("Estas en Zona de  " + "\033[4;32;40m" + "Devoluciòn de libro" + "\033[0m")
+        cabezera_menu("Devoluciòn de libro", usuario)
         espacio()
         marco_menu()
         espacio()
@@ -726,17 +700,19 @@ def devolucion_libro(indice) :
         espacio()
         dato_user =input("Si desea salir presione '0': ") 
         if dato_user == "0": break
-        i = buscar_user(dato_user) # i = indice
+        i = buscar_user(usuario_DB, dato_user) # i = indice
         if i != "No_Existe":
             espacio()
             marco_menu()
             espacio()
-            print (f"Libros Reservados Por " + "\033[1;31;40m" + f"{usuario_DB[i]['nombre']}" + "\033[0m")
+            print (f"Libros Reservados Por " + "\033[1;31;40m" + usuario_DB[i]['nombre'] + "\033[0m")
             espacio()
             marco_menu()
-            
+            # buscar libro reservado por usuario
+            control = 0
             for il in range(len(libro_DB)):
                 if libro_DB[il]["Estado"] == usuario_DB[i]["id"]:
+                    control = 1
                     espacio()
                     print (f"Codigo = {libro_DB[il]['id'].ljust(15)}  titulo = {libro_DB[il]['titulo'].ljust(30)} autor = {libro_DB[il]['autor'].ljust(20)} año de edicion = {libro_DB[il]['año de edicion']}" )
                     espacio()
@@ -744,13 +720,18 @@ def devolucion_libro(indice) :
                     if devol.upper() == "S":
                         libro_DB[il]["Estado"] = ""
                         
-                        guardar_libro_DB()
+                        guardar_DB(archivo_libro_DB, libro_DB)
                         espacio()
                         marco_menu()
                         espacio()
                         print (f"Libro Devuelto " + "\033[1;95;40m" + f"{libro_DB[il]['titulo']} " + "\033[0m")
                         espacio()
                         marco_menu()
+            if control == 0:
+                espacio()
+                print ("No tiene libros reservados")
+                marco_menu()
+                espacio()
             espacio()
             continuar()
             break
@@ -761,22 +742,15 @@ def devolucion_libro(indice) :
             print ("No existe el usuario")
             espacio()
             marco_menu()
-            
         espacio()
         continuar()
-            
 
 
-def eliminar_libro(indice):
+def eliminar_libro(libro_DB, usuario):
     while True:
         os.system('cls')
         cabezera()
-        espacio()
-        marco_menu()
-        espacio()
-        print("Bienvenido Administrador: " + "\033[4;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-        espacio()
-        print("Estas en Zona de  " + "\033[4;32;40m" + "Eliminar el Libro" + "\033[0m")
+        cabezera_menu("Eliminar el Libro", usuario)
         espacio()
         marco_menu()
         espacio()
@@ -790,7 +764,7 @@ def eliminar_libro(indice):
             espacio()
             input("No puede dejar el campo vacío")
             continue
-        il = buscar_libro(dato_libro) # il = indice
+        il = buscar_libro(libro_DB,dato_libro) # il = indice
         if il != "No_Existe":
             espacio()
             marco_menu()
@@ -802,18 +776,18 @@ def eliminar_libro(indice):
             if control.upper() == "S":
                 if libro_DB[il]["Estado"] == "":
                     temp = libro_DB.pop(il)
-                    guardar_libro_DB()
+                    guardar_DB(archivo_libro_DB, libro_DB)
                     espacio()
-                    input("\033[1;95;40m" + f"{temp['titulo']} " + "\033[0m" + "\033[1;31;40m" + "eliminado" + "\033[0m")
+                    input("\033[1;95;40m" + temp['titulo'] + "\033[0m" + "ha sido " "\033[1;31;40m" + "eliminado" + "\033[0m")
                     break
                 else:
                     espacio()
-                    input("\033[1;95;40m" + f"{libro_DB[il]['titulo']}" + "\033[0m" + " no puede ser eliminado, el libro se encuentra  " + "\033[1;31;40m" + "reservado" + "\033[0m")
+                    input("\033[1;95;40m" + libro_DB[il]['titulo'] + "\033[0m" + " no puede ser eliminado, el libro se encuentra  " + "\033[1;31;40m" + "reservado" + "\033[0m")
                 break
             else:
                 print ()
                 espacio()
-                input("No hay Libro  eliminado")
+                input("No hay Libro eliminado")
                 break
         else:
             print ()
@@ -821,23 +795,11 @@ def eliminar_libro(indice):
             input("Libro no encontrado, por favor verifique el dato ingresado")
 
 
-
-
-
-
-def menu_admin_libro(indice):
-    global usuario_DB
+def menu_admin_libro(usuario):
     while True:
             os.system('cls')
             cabezera()
-            espacio()
-            marco_menu()
-            espacio()
-            print ("Bienvenido Administrador :  " + "\033[1;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
-            espacio()
-            marco_menu()
-            espacio()
-            print ("Estas en Menu de " + "\033[4;32;40m" + "administracion de libro" + "\033[0m")
+            cabezera_menu("administracion de libro", usuario)
             espacio()
             print ("1. 🎁 Registrar un libro")
             espacio()
@@ -854,11 +816,9 @@ def menu_admin_libro(indice):
             marco_menu()
             espacio()
             menu_opcion = input ("Elegir un opcion: ")
-                                
-
             # 1. Crear un Usuario
             if menu_opcion == "1":
-                exito = registrar_libro()
+                exito = registrar_libro(libro_DB)
                 if exito: 
                     espacio()
                     input("Libro registrado con exito")
@@ -869,42 +829,38 @@ def menu_admin_libro(indice):
                             
             # 2. listar todos Usuario
             elif menu_opcion == "2":
-                listar_libro()
+                listar_libro(libro_DB)
+                espacio()
+                continuar()
                 continue
                             
             # 3. Reservar de libro
             elif menu_opcion == "3":
-                reservar_libro(indice)
+                reservar_libro(libro_DB, usuario)
                 continue
             
             # 4. Devolucion de Libro
             elif menu_opcion == "4":
-                devolucion_libro(indice)
+                devolucion_libro(usuario_DB, libro_DB, usuario)
                 continue
                             
             # 5. Eliminar libro
             elif menu_opcion == "5":
-                eliminar_libro(indice)
+                eliminar_libro(libro_DB, usuario)
                             
             # 0. Salir
             elif menu_opcion == "0":break
-            
             else:
                 print()
                 espacio()
                 input("Ingrese un valor correcto por favor\n")
 
 
-
-
-def menu_admin(indice):
+def menu_admin(usuario):
     while True:
         os.system('cls')
         cabezera()
-        espacio()
-        marco_menu()
-        espacio()
-        print("Bienvenido Administrador :  " + "\033[1;91;40m" + f"{usuario_DB[indice]["nombre"]}" + "\033[0m")
+        cabezera_menu("administracion", usuario)
         espacio()
         marco_menu()
         espacio()
@@ -920,11 +876,11 @@ def menu_admin(indice):
                         
         # 1. Menu de administracion de usuario 
         if menu_opcion == "1":
-            menu_admin_usuario(indice)
+            menu_admin_usuario(usuario)
 
         # 2. administracion de libros
         elif menu_opcion == "2":
-            menu_admin_libro(indice)
+            menu_admin_libro(usuario)
                         
         # 0. Salir
         elif menu_opcion == "0":break
@@ -935,103 +891,10 @@ def menu_admin(indice):
             input("Ingrese un valor correcto por favor\n")            
 
 
-def menu_usuario(indice):
-
-        reservar_libro(indice)
+def menu_usuario(usuario):
+    reservar_libro(libro_DB,usuario)
 
 def logo():
-#     print ("""
-
-#                                                   ,]/@@@@@@@@@@@@@@@@@@@@@@@@]]                    
-#                                              ,]@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\`              
-#                                          ]@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@]          
-#                                      ,/@@@@@@@@@@@@@@/[`                   ,[\@@@@@@@@@@@@@@\`      
-#                                    /@@@@@@@@@@@/[                                 [\@@@@@@@@@@@\`   
-#                                 ]@@@@@@@@@@/`                                         ,\@@@@@@@@@@\                                                
-#                         ]@@@\`/@@@@@@@@@[  						[@@@@@@@@@\,/@@@]                                        
-#                       =@@@@@@@@@@@@@@/                   ]]/@@@@@@@@@@@\]]                   \@@@@@@@@@@@@@@^                                      
-#                       =@@@@@@@@@@@@`o              ]@@@@@@@@@@@@@@@@@@@@@@@@@@@]`              ,@@@@@@@@@@@@^                                      
-#                       =@@@@@@@@@@o  o         ,/@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\`            ,@@@@@@@@@@^                                      
-#                       =@@@@@@@@@@@@oo]]]]]]]/@@@@@@@@@@O]]]]]]]]]]]]]]]]]]]O@@@@@@@@@@@]]]]]]]]]/@@@@@@@@@@@^                                      
-#                       =@@@@@@oO@@@@@@ooooO@@@@@@@@OoooooooooooooooooooooooooooooO@@@@@@@@Ooooo@@@@@@@oO@@@@@^                                      
-#              /@@@@\   =@@@@@@oooO@@@@@@@@@@@@@@ooooooooooooooooooooooooooooooooooooo@@@@@@@@@@@@@@@oooO@@@@@^   /@@@@\                             
-#            ,@@@@@@@@@@/@@@@@@oooooO@@@@@@@@@OoooooooooooooooooooooooooooooooooooooooooO@@@@@@@@@@oooooO@@@@@\/@@@@@@@@@`                           
-#            =@@@@@@@@@@@@@@@@@oooooooO@@@@@@oooooooooooooooO@@@@@@@@@@@@@Oooooooooooooooo@@@@@@OoooooooO@@@@@@@@@@@@@@@@^                           
-#            =@@@@@@@@@@@@@@@@@oooooooooO@@@@@@ooooooooo@@@@@@@@@@@@@@@@@@@@@@@ooooooooo@@@@@@OoooooooooO@@@@@@@@@@@@@@@@^                           
-#            =@@@@@@oo@@@@@@@@@oooooooooooO@@@@@@oooo@@@@@@@@@@@@OOOOO@@@@@@@@@@@@oooo@@@@@@OoooooooooooO@@@@@@@@oo@@@@@@^                           
-#            =@@@@@@oooooO@@@@@oooooooooooooO@@@@@@@@@@@@@@ooooooooooooooooo@@@@@@@@@@@@@@OoooooooooooooO@@@@Oooooo@@@@@@^                           
-#            =@@@@@@oooooO@@@@@oooooooooooooooO@@@@@@@@@ooooooooooooooooooooooo@@@@@@@@@Oooooooooooooooo@@@@@Oooooo@@@@@@^                           
-#            =@@@@@@oooooO@@@@@oooooooooooooooooO@@@@@@ooooooooooooooooooooooooo@@@@@@Oooooooooooooooooo@@@@@Oooooo@@@@@@^                           
-#   ,/@@@@]  =@@@@@@oooooO@@@@@oooooooooooooooooooO@@@@@@ooooooooooooooooooooo@@@@@@Oooooooooooooooooooo@@@@@Oooooo@@@@@@^  ]@@@@\`                  
-#  =@@@@@@@@@@@@@@@@oooooO@@@@@oooooooooooooooooooooO@@@@@@oooO@@@@@@@@@Oooo@@@@@@Oooooooooooooooooooooo@@@@@Oooooo@@@@@@@@@@@@@@@@^                 
-#  =@@@@@@@@@@@@@@@@oooooO@@@@@oooooooooooooooooooooooO@@@@@@@@@@@@@@@@@@@@@@@@@Oooooooooooooooooooooooo@@@@@Oooooo@@@@@@@@@@@@@@@@@                 
-#  =@@@@@@@@@@@@@@@@oooooO@@@@@oooooooooooooooooooooooooO@@@@@@@@OOooO@@@@@@@@Oooooooooooooooooooooooooo@@@@@Oooooo@@@@@@@@@@@@@@@@@                 
-#  =@@@@@OoooO@@@@@@oooooO@@@@@oooooooooooooooooooooooooooO@@@@@@ooooo@@@@@@Oooooooooooooooooooooooooooo@@@@@Oooooo@@@@@@@oooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@oooooooooooooooooooooooooooooO@@@@@@o@@@@@@Oooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@oooooooooooooooooooooooooooooooO@@@@@@@@@Oooooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@oooooooooooooooooooooooooooooooooO@@@@@Oooooooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@oooooooooooooooooooooooooooooooooo@@@@@oooooooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@ooooooooooooooooooooooooooooooooooO@@@@oooooooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@ooooooooooooooooooooooooooooooooooO@@@@oooooooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@ooooo@@@@@oooooO@@@@@ooooooooooooooooooooooooooooooooooO@@@@oooooooooooooooooooooooooooooooooo@@@@@Oooooo@@@@@oooooO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@oOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@ooOOOOOoooOOOOOooooOOOooOOOOooOOoOO@@@OooOOOOOOOOOOooooOOOOOoooOOOOOoOOoo@@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@OoOOOoOOOOoOOOoOOOOOOOooOOooOOOooOO@@@OOOooOOOOOOooOOOOoOOooOOOOoOOOoOOOoO@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@OoOOOoOOOOOOOOOOOoooOOooOOooOOOOoOO@@@OOOooOOOOOOooOOOOOOOooOOOOoOOOoOOOo@@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOO@@@@@@@OOOoOOOOoOOOoOOOooOOooOOOoOOOOoOO@@@OOOoOOOOoOOOoOOOooOOOoOOOoOOOOoOO@@@@@@@OOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOOOO@@@@@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@@@@@OOOOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOOOOOO@@@@@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@OOOOOOOOOOOOOOOOOOOOOOOOOOOOO@@@@@@@OOOOOOOOOO@@@@@OOOOOO@@@@@@                 
-#  =@@@@@@OOOOO@@@@@OOOOOOOOOOOOO@@@@@@OOOOOOOOOOOOOOOOOOOOOOOOOOO@@@OOOOOOOOOOOOOOOOOOOOOOOOOOO@@@@@@OOOOOOOOOOOOO@@@@@OOOOO@@@@@@@                 
-#  =@@@@@@OOOOO@@@@@@@OOOOOOOOOOOOO@@@@@@OOOOOOOOOOOOOOOOOOOOOOOOOO@@OOOOOOOOOOOOOOOOOOOOOOOOO@@@@@@OOOOOOOOOOOOO@@@@@@@OOOOO@@@@@@@                 
-#  =@@@@@@OOOOOO@@@@@@@@@@OOOOOOOOOOO@@@@@@OOOOOOOOOOOOOOOOOOOOOOOO@@OOOOOOOOOOOOOOOOOOOOOOO@@@@@@OOOOOOOOOOO@@@@@@@@@@OOOOOO@@@@@@@                 
-#  =@@@@@@OOOOOOOOOO@@@@@@@@@OOOOOOOOOOO@@@@@OOOOOOOOOOOOOOOOOOOOOO@OOOOOOOOOOOOOOOOOOOOOO@@@@@OOOOOOOOOOO@@@@@@@@@OOOOOOOOOO@@@@@@@                 
-#  =@@@@@@@@OOOOOOOOOOOO@@@@@@@@@OOOOOOOOO@@@@@OOOOOOOOOOOOOOOOOOOO@OOOOOOOOOOOOOOOOOOOO@@@@@OOOOOOOOO@@@@@@@@@OOOOOOOOOOOO@@@@@@@@@                 
-#  =@@@@@@@@@@@@@@OOOOOOOOOOO@@@@@@@OOOOOOOOO@@@@OOOOOOOOOOOOOOOOOO@OOOOOOOOOOOOOOOOOO@@@@OOOOOOOOO@@@@@@@OOOOOOOOOOOO@@@@@@@@@@@@@@                 
-#   [@@@@@@@@@@@@@@@@@@OOOOOOOOOO@@@@@@@OOOOOOO@@@@OOOOOOOOOOOOOOOO@OOOOOOOOOOOOOOOO@@@@OOOOOOOO@@@@@@OOOOOOOOOO@@@@@@@@@@@@@@@@@@[`                 
-#        ,\@@@@@@@@@@@@@@@@@@OOOOOOOO@@@@@@OOOOOOO@@@OOOOOOOOOOOOOO@OOOOOOOOOOOOOO@@@OOOOOOO@@@@@@OOOOOOOOO@@@@@@@@@@@@@@@@@/[                       
-#              [\@@@@@@@@@@@@@@@@@OOOOOOO@@@@@@OOOOO@@@OOOOOOOOOOOO@OOOOOOOOOOOO@@@OOOOOO@@@@@OOOOOOO@@@@@@@@@@@@@@@@@@[`                            
-#                   ,[@@@@@@@@@@@@@@@@@@OOOOO@@@@@OOOOO@@OOOOOOOOOO@OOOOOOOOOO@@@OOOO@@@@@OOOOO@@@@@@@@@@@@@@@@@@/`                                  
-#                         [\@@@@@@@@@@@@@@@@@OOOOO@@@@OOO@@OOOOOOOOOOOOOOOOO@@OOOO@@@@OOOO@@@@@@@@@@@@@@@@@@[                                        
-#                              ,[@@@@@@@@@@@@@@@@@@OOO@@@OO@@OOOOOOOOOOOOO@@OO@@@OOO@@@@@@@@@@@@@@@@@@/`                                             
-#                                    [\@@@@@@@@@@@@@@@@@OO@@@O@OOOOOOOOO@OO@@OO@@@@@@@@@@@@@@@@@@[    
-#                                         ,[@@@@@@@@@@@@@@@@@@@@@OOOOO@@@@@@@@@@@@@@@@@@@@@/`         
-#                                               [\@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/[               
-#                                                    ,[@@@@@@@@@@@@@@@@@@@@@@@@@[`                    
-#                                                           [\@@@@@@@@@@@@@/[                          
-#                                                                ,[@@@[`                               
-
-# """)      
-# """      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-#                                     						                       =@@@@@@@             @@@@@@@^  /@@@@@@`                         
-#                                     						                       =@@@@@@@             @@@@@@@^ ,@@@@@@@@                         
-#                                    						                           =@@@@@@@             @@@@@@@^  \@@@@@@^                         
-#                                            ]]]]]]` ]/@@@\]     ,]]]]]]]   ]]]]]]]` =@@@@@@@,]@@@@]`     @@@@@@@^  ,]]]]]]`      ,]@@@@@\]                 ,]]/@@@@@@]     ,]]]]]]` ]@@@           
-#                                            @@@@@@@@@@@@@@@@\   =@@@@@@@  =@@@@@@@^ =@@@@@@@@@@@@@@@@^   @@@@@@@^  @@@@@@@^    /@@@@@@@@@@@             ,@@@@@@@@@@@@@@@   =@@@@@@@@@@@@           
-#                                            @@@@@@@@@@@@@@@@@^  =@@@@@@@  =@@@@@@@^ =@@@@@@@@@@@@@@@@@`  @@@@@@@^  @@@@@@@^   @@@@@@@@@@@@^              @@@@@@@@@@@@@@@^  =@@@@@@@@@@@@           
-#                                            @@@@@@@@[[@@@@@@@@  =@@@@@@@  =@@@@@@@^ =@@@@@@@/[\@@@@@@@^  @@@@@@@^  @@@@@@@^  /@@@@@@@/[@@@^              =@@@@@@@@@@@@@@/  =@@@@@@@@@@@@           
-#                                            @@@@@@@^  =@@@@@@@` =@@@@@@@  =@@@@@@@^ =@@@@@@@   @@@@@@@\  @@@@@@@^  @@@@@@@^  @@@@@@@^                            =@@@@@@^  =@@@@@@@^               
-#                                            @@@@@@@^  =@@@@@@@^ =@@@@@@@  =@@@@@@@^ =@@@@@@@   @@@@@@@@  @@@@@@@^  @@@@@@@^ =@@@@@@@^                     ]@@@@@@@@@@@@@^  =@@@@@@@                
-#                                            @@@@@@@^  =@@@@@@@^ =@@@@@@@  =@@@@@@@^ =@@@@@@@   @@@@@@@/  @@@@@@@^  @@@@@@@^ =@@@@@@@^                   ,@@@@@@@@@@@@@@@^  =@@@@@@@                
-#                                            @@@@@@@^  =@@@@@@@  =@@@@@@@  =@@@@@@@^ =@@@@@@@   @@@@@@@^  @@@@@@@^  @@@@@@@^  @@@@@@@^                   @@@@@@@  =@@@@@@^  =@@@@@@@                
-#                                            @@@@@@@@@@@@@@@@@/  =@@@@@@@@@@@@@@@@@^ =@@@@@@@@@@@@@@@@@`  @@@@@@@@^ @@@@@@@^  =@@@@@@@@@@@@    /@@@@@@`  @@@@@@@\]/@@@@@@@@`=@@@@@@@                
-#                                            @@@@@@@@@@@@@@@@@   =@@@@@@@@@@@@@@@@@^ =@@@@@@@@@@@@@@@@^   @@@@@@@@^ @@@@@@@^   \@@@@@@@@@@@`   @@@@@@@@  =@@@@@@@@@@@@@@@@@ =@@@@@@@                
-#                                            @@@@@@@@@@@@@@@/     ,@@@@@@@@`@@@@@@@^ =@@@@@@\@@@@@@@@`     \@@@@@@^ @@@@@@@^     \@@@@@@@@@^   =@@@@@@`   ,@@@@@@@/ @@@@@@@ =@@@@@@@                
-#                                            @@@@@@@@                                                 
-#                                            @@@@@@@@                                                 
-#                                            @@@@@@@@                                                 
-      
-# """
     print("\033[1;36;40m" + """
                                                     ooo                    
                                             ooooooo     ooooooo             
@@ -1060,12 +923,8 @@ def logo():
 
 # iniciar programa: Estructura lógica del programa
 
-# inicio base de datos
-if os.path.exists("usuario_DB.json"):usuario_DB = cargar_usuario_DB()
-else: guardar_usuario_DB() 
-    
-if os.path.exists("libro_DB.json"):libro_DB = cargar_libro_DB()
-else: guardar_libro_DB()
+# cargar base de datos
+usuario_DB, libro_DB = cargar_DB(lista_archivos_DB, lista_DB)
 
 os.system('cls')
 cabezera()
@@ -1075,7 +934,6 @@ proceso_100()
 
 while True:
         os.system('cls')
-        
         cabezera()
         print ("""            ----------------------------
             """'\033[1;93;40m' +' ═══>'+"\033[0m" """ Estas en menu inicial"""'\033[1;93;40m' +' ═══╗'+"\033[0m" """
@@ -1086,42 +944,31 @@ while True:
                                         |  2.📒 registrese                              |
                                         |  0.📕 Salir                                   |
                                         -------------------------------------------------  """)
-        # print("Si usted no es usuario, por favor registrese.")
-        
-        # marco_menu()
-        # print ("1.📗 Iniciar sesion")
-        # print ("2.📒 registrese")
-        # print ("0.📕 Salir")
-        # marco_menu()
         menu_opcion=input(" "*40 + "Elegir un opcion: ")
-        
-        
+
         # 1. Iniciar sesion
         if menu_opcion == "1":
             # login usuario return indice de usuario en lista
-            indice = longin()
-            if indice != "No_Existe":
+            usuario = longin(usuario_DB)
+            if usuario != "No_Existe":
                 # nivel de Poder: 0. usuario nuevo , 1. usuario , 2. administrador
-                if usuario_DB[indice]["nivel"] == 0:
-                    espacio()
-                    print("Hola " + "\033[1;32;40m" + f"{usuario_DB[indice]["nombre"]}"+ "\033[0m" + ", Bienvenido Biblioteca Public.ar, Ud es Usuario Nuevo.")
-                    espacio()
-                    input("Avisar a Administrador para que te asigne un rol")
+                if usuario["nivel"] == 0:
+                    menu_usuario(usuario)
                 
                 # 1. Menu de usuario
-                elif usuario_DB[indice]["nivel"] == 1:
-                    menu_usuario(indice)
+                elif usuario["nivel"] == 1:
+                    menu_usuario(usuario)
                 
                 # 2. Menu de administrador 
-                elif usuario_DB[indice]["nivel"] == 2:
-                    menu_admin(indice)
+                elif usuario["nivel"] == 2:
+                    menu_admin(usuario)
             else:
                 espacio()
                 input("No encontramos el usuario, intente de nuevo") 
         
         # 2. registrese
         elif menu_opcion == "2":
-            exito = registrar_usuario()
+            exito = registrar_usuario(usuario_DB)
             if exito: 
                 espacio()
                 input("Usuario registrado con exito")
