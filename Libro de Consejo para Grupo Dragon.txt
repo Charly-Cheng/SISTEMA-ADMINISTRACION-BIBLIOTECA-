@@ -1,0 +1,16 @@
+2024-06-21 (Charly) : 
+    1. menu de admin de libro falat opcion de Reservar el libro. (hecho en 2024-06-23)
+
+2024-06-24 (Charly) : 
+    1. En Principio Agrregar Bien venido A Liblioteca.Ar, En final Agrregar nombre Integrante de Grupo Dragon.(hecho 2024-07-01)
+    2. Eliminar usuario: agarrar una condición, no se puede eliminar a si mismo. (hecho 2024-06-29)
+
+2024-06-29 (Charly):
+    1. Usuario nuevo puede ver lista de libro,pero no reservar. (hecho 2024-07-07)
+        (Observacion: por cuestion tiempo de presentacion de proyecto, no agregar.)
+
+2024-07-01 (Charly)
+    1. Agregar Filtro Eliminar usuario, no se puede eliminar si tiene libro reservado. (hecho 2024-07-01)
+    2. Corregir error de palabras. (hecho 2024-07-01)
+    3. Agregar dibujito en menu. (hecho 2024-07-01)
+    4. Agregar login no muestra la clave. (hecho 2024-07-01)
