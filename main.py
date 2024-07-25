@@ -535,14 +535,14 @@ def registrar_libro(libro_DB):
     # ingrese titulo de libro
     while True:
         espacio()
-        libro["titulo"] = (input("ingrese titulo de libro: ")).capitalize()
+        libro["titulo"] = (input("ingrese titulo de libro: ")).title()
         if len(libro["titulo"]) > 0:
             break
 
     # ingrese autor de libro
     while True:
         espacio()
-        libro["autor"] = (input("ingrese autor de libro: ")).capitalize()
+        libro["autor"] = (input("ingrese autor de libro: ")).title()
         if len(libro["autor"]) > 0:
             break
     
